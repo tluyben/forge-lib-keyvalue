@@ -57,6 +57,17 @@ describe('Generic Adapter Interface', () => {
       await store.hset('test-hash', 'field1', 'value1');
       await store.hset('test-hash', 'field2', 'value2');
     });
+
+    it('should get hash field values', async () => {
+      await store.hset('test-hash', 'field1', 'value1');
+      const value = await store.hget('test-hash', 'field1');
+      expect(value).toBe('value1');
+    });
+
+    it('should return null for non-existent hash fields', async () => {
+      const value = await store.hget('test-hash', 'non-existent');
+      expect(value).toBeNull();
+    });
   });
 
   describe('Error Handling', () => {

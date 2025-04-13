@@ -41,6 +41,7 @@ export interface KVAdapter {
   lpop(key: string): Promise<string | null>;
   rpop(key: string): Promise<string | null>;
   hset(key: string, field: string, value: string): Promise<void>;
+  hget(key: string, field: string): Promise<string | null>;
   close(): Promise<void>;
 }
 
@@ -143,6 +144,14 @@ export class KV {
   async del(key: string): Promise<void> {
     await this.ensureAdapter();
     await this.adapter!.del(key);
+  }
+
+  /**
+   * Get a field value from a hash
+   */
+  async hget(key: string, field: string): Promise<string | null> {
+    await this.ensureAdapter();
+    return this.adapter!.hget(key, field);
   }
 
   private ensureAdapter(): void {

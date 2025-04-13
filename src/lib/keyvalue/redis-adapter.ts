@@ -56,6 +56,10 @@ export class RedisAdapter implements KeyValueAdapter {
     await this.client.hset(key, field, value);
   }
 
+  async hget(key: string, field: string): Promise<string | null> {
+    return this.client.hget(key, field);
+  }
+
   async expire(key: string, seconds: number): Promise<boolean> {
     const result = await this.client.expire(key, seconds);
     return result === 1;

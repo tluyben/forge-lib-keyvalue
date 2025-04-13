@@ -24,6 +24,7 @@ export class SQLiteAdapter implements KeyValueAdapter {
     getLastListItem: Database.Statement;
     deleteListItem: Database.Statement;
     hset: Database.Statement;
+    hget: Database.Statement;
     delete: Database.Statement;
   };
 
@@ -91,6 +92,7 @@ export class SQLiteAdapter implements KeyValueAdapter {
       getLastListItem: this.db.prepare('SELECT value FROM list_store WHERE key = ? ORDER BY position DESC LIMIT 1'),
       deleteListItem: this.db.prepare('DELETE FROM list_store WHERE key = ? AND position = ?'),
       hset: this.db.prepare('INSERT OR REPLACE INTO hash_store (key, field, value) VALUES (?, ?, ?)'),
+      hget: this.db.prepare('SELECT value FROM hash_store WHERE key = ? AND field = ?'),
       delete: this.db.prepare('DELETE FROM kv_store WHERE key = ?'),
     };
   }
@@ -180,6 +182,11 @@ export class SQLiteAdapter implements KeyValueAdapter {
 
   async del(key: string): Promise<void> {
     this.statements.delete.run(key);
+  }
+
+  async hget(key: string, field: string): Promise<string | null> {
+    const row = this.statements.hget.get(key, field) as SQLiteRow | undefined;
+    return row ? row.value : null;
   }
 
   async close(): Promise<void> {
