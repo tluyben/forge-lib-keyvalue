@@ -10,7 +10,10 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "jest",
+    "test": "jest --testPathIgnorePatterns=redis-adapter.test.ts",
+    "test:redis": "jest redis-adapter.test.ts",
+    "test:all": "jest",
+    "test:coverage": "jest --coverage",
     "example": "ts-node usage-example.ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm test"

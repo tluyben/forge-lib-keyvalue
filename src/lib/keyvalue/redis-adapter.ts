@@ -61,6 +61,10 @@ export class RedisAdapter implements KeyValueAdapter {
     return result === 1;
   }
 
+  async del(key: string): Promise<void> {
+    await this.client.del(key);
+  }
+
   async close(): Promise<void> {
     await this.client.quit();
   }

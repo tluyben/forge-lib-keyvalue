@@ -34,26 +34,17 @@ export type ConnectionOptions = RedisConnectionOptions | SQLiteConnectionOptions
 export interface KVAdapter {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, expiryInSeconds?: number): Promise<void>;
-  lpush(key: string, ...values: string[]): Promise<number>;
-  rpush(key: string, ...values: string[]): Promise<number>;
-  lpop(key: string): Promise<string | null>;
-  rpop(key: string): Promise<string | null>;
-  hset(key: string, field: string, value: string): Promise<number>;
-  expire(key: string, seconds: number): Promise<number>;
-  close(): Promise<void>;
-}
-
-export interface KeyValueAdapter {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string, expiryInSeconds?: number): Promise<void>;
+  del(key: string): Promise<void>;
+  expire(key: string, seconds: number): Promise<boolean>;
   lpush(key: string, ...values: string[]): Promise<number>;
   rpush(key: string, ...values: string[]): Promise<number>;
   lpop(key: string): Promise<string | null>;
   rpop(key: string): Promise<string | null>;
   hset(key: string, field: string, value: string): Promise<void>;
-  expire(key: string, seconds: number): Promise<boolean>;
   close(): Promise<void>;
 }
+
+export interface KeyValueAdapter extends KVAdapter {}
 
 // Main KV class
 export class KV {
@@ -79,64 +70,64 @@ export class KV {
    * Get a value by key
    */
   async get(key: string): Promise<string | null> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.get(key);
+    this.ensureAdapter();
+    return this.adapter!.get(key);
   }
 
   /**
    * Set a key to hold a string value
    */
   async set(key: string, value: string, expiryInSeconds?: number): Promise<void> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.set(key, value, expiryInSeconds);
+    this.ensureAdapter();
+    return this.adapter!.set(key, value, expiryInSeconds);
   }
 
   /**
    * Insert values at the head of a list
    */
   async lpush(key: string, ...values: string[]): Promise<number> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.lpush(key, ...values);
+    this.ensureAdapter();
+    return this.adapter!.lpush(key, ...values);
   }
 
   /**
    * Insert values at the tail of a list
    */
   async rpush(key: string, ...values: string[]): Promise<number> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.rpush(key, ...values);
+    this.ensureAdapter();
+    return this.adapter!.rpush(key, ...values);
   }
 
   /**
    * Remove and get the first element in a list
    */
   async lpop(key: string): Promise<string | null> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.lpop(key);
+    this.ensureAdapter();
+    return this.adapter!.lpop(key);
   }
 
   /**
    * Remove and get the last element in a list
    */
   async rpop(key: string): Promise<string | null> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.rpop(key);
+    this.ensureAdapter();
+    return this.adapter!.rpop(key);
   }
 
   /**
    * Set field in the hash stored at key to value
    */
   async hset(key: string, field: string, value: string): Promise<void> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.hset(key, field, value);
+    this.ensureAdapter();
+    return this.adapter!.hset(key, field, value);
   }
 
   /**
    * Set a key's time to live in seconds
    */
   async expire(key: string, seconds: number): Promise<boolean> {
-    if (!this.adapter) throw new Error('No adapter initialized');
-    return this.adapter.expire(key, seconds);
+    this.ensureAdapter();
+    return this.adapter!.expire(key, seconds);
   }
 
   /**
@@ -147,6 +138,11 @@ export class KV {
       await this.adapter.close();
       this.adapter = null;
     }
+  }
+
+  async del(key: string): Promise<void> {
+    await this.ensureAdapter();
+    await this.adapter!.del(key);
   }
 
   private ensureAdapter(): void {

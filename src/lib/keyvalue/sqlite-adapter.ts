@@ -21,6 +21,7 @@ export class SQLiteAdapter implements KeyValueAdapter {
     insertListItem: Database.Statement;
     getListItemCount: Database.Statement;
     getListItem: Database.Statement;
+    getLastListItem: Database.Statement;
     deleteListItem: Database.Statement;
     hset: Database.Statement;
     delete: Database.Statement;
@@ -79,7 +80,7 @@ export class SQLiteAdapter implements KeyValueAdapter {
     // Basic operations
     this.statements = {
       get: this.db.prepare('SELECT value FROM kv_store WHERE key = ? AND (expiry IS NULL OR expiry > unixepoch())'),
-      set: this.db.prepare('INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)'),
+      set: this.db.prepare('INSERT OR REPLACE INTO kv_store (key, value, expiry) VALUES (?, ?, ?)'),
       expire: this.db.prepare('UPDATE kv_store SET expiry = unixepoch() + ? WHERE key = ?'),
       cleanup: this.db.prepare('DELETE FROM kv_store WHERE expiry IS NOT NULL AND expiry <= unixepoch()'),
       getMinPos: this.db.prepare('SELECT MIN(position) as min_pos FROM list_store WHERE key = ?'),
@@ -87,6 +88,7 @@ export class SQLiteAdapter implements KeyValueAdapter {
       insertListItem: this.db.prepare('INSERT INTO list_store (key, value, position) VALUES (?, ?, ?)'),
       getListItemCount: this.db.prepare('SELECT COUNT(*) as count FROM list_store WHERE key = ?'),
       getListItem: this.db.prepare('SELECT value FROM list_store WHERE key = ? ORDER BY position ASC LIMIT 1'),
+      getLastListItem: this.db.prepare('SELECT value FROM list_store WHERE key = ? ORDER BY position DESC LIMIT 1'),
       deleteListItem: this.db.prepare('DELETE FROM list_store WHERE key = ? AND position = ?'),
       hset: this.db.prepare('INSERT OR REPLACE INTO hash_store (key, field, value) VALUES (?, ?, ?)'),
       delete: this.db.prepare('DELETE FROM kv_store WHERE key = ?'),
@@ -155,7 +157,7 @@ export class SQLiteAdapter implements KeyValueAdapter {
 
   async rpop(key: string): Promise<string | null> {
     const maxPosRow = this.statements.getMaxPos.get(key) as SQLiteRow | undefined;
-    const itemRow = this.statements.getListItem.get(key) as SQLiteRow | undefined;
+    const itemRow = this.statements.getLastListItem.get(key) as SQLiteRow | undefined;
 
     if (!itemRow) return null;
 
@@ -171,8 +173,13 @@ export class SQLiteAdapter implements KeyValueAdapter {
   }
 
   async expire(key: string, seconds: number): Promise<boolean> {
-    const result = this.statements.expire.run(key, seconds);
+    const expiry = Math.floor(Date.now() / 1000) + seconds;
+    const result = this.statements.expire.run(seconds, key);
     return result.changes > 0;
+  }
+
+  async del(key: string): Promise<void> {
+    this.statements.delete.run(key);
   }
 
   async close(): Promise<void> {
