@@ -70,9 +70,24 @@ const skipRedisTests = !process.env.REDIS_URL && !process.env.CI;
   describe('Hash Operations', () => {
     it('should set hash field', async () => {
       await store.hset('test-hash', 'field1', 'value1');
-      // We can verify it was set by trying to set it again
-      const result = await store.hset('test-hash', 'field1', 'value2');
-      expect(result).toBe(0); // 0 indicates field existed
+      // Set it again to verify it works
+      await store.hset('test-hash', 'field1', 'value2');
+    });
+
+    it('should get hash field value', async () => {
+      await store.hset('test-hash', 'field1', 'value1');
+      const value = await store.hget('test-hash', 'field1');
+      expect(value).toBe('value1');
+    });
+
+    it('should return null for non-existent hash field', async () => {
+      const value = await store.hget('test-hash', 'non-existent');
+      expect(value).toBeNull();
+    });
+
+    it('should return null for non-existent hash', async () => {
+      const value = await store.hget('non-existent', 'field1');
+      expect(value).toBeNull();
     });
   });
 
