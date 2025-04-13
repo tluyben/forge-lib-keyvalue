@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "test": "jest --testPathIgnorePatterns=redis-adapter.test.ts",
-    "test:redis": "jest redis-adapter.test.ts",
+    "test:redis": "REDIS_URL='redis://localhost:6379' jest __tests__/redis-adapter.test.ts",
     "test:all": "jest",
     "test:coverage": "jest --coverage",
     "example": "ts-node usage-example.ts",
